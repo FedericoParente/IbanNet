@@ -111,6 +111,66 @@ public sealed class IbanRegistryTests : IDisposable
     }
 
     [Fact]
+    public void Given_that_registry_is_not_yet_hydrated_when_adding_provider_it_should_not_throw()
+    {
+        var sut = new IbanRegistry
+        {
+            Providers =
+            {
+                new SwiftRegistryProvider()
+            }
+        };
+
+        // Act
+        Action act = () => sut.Providers.Add(Mock.Of<IIbanRegistryProvider>());
+
+        // Assert
+        act.Should().NotThrow();
+        sut.Providers.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void Given_that_registry_has_been_hydrated_when_adding_another_provider_it_should_throw()
+    {
+        var sut = new IbanRegistry
+        {
+            Providers =
+            {
+                new SwiftRegistryProvider()
+            }
+        };
+
+        // Act
+        sut.Count.Should().BeGreaterThan(0); // Hydrate
+        Action act = () => sut.Providers.Add(Mock.Of<IIbanRegistryProvider>());
+
+        // Assert
+        act.Should().Throw<NotSupportedException>()
+            .WithMessage("Collection is read-only.");
+        sut.Providers.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Given_that_registry_has_been_hydrated_when_adding_another_provider_to_the_list_reference_it_should_not_affect_the_provider_property()
+    {
+        var sut = new IbanRegistry()
+        {
+            Providers =
+            {
+                new SwiftRegistryProvider()
+            }
+        };
+
+        // Act
+        IList<IIbanRegistryProvider> providerRef = sut.Providers;
+        sut.Count.Should().BeGreaterThan(0); // Hydrate
+        providerRef.Add(Mock.Of<IIbanRegistryProvider>());
+
+        // Assert
+        sut.Providers.Should().HaveCount(1);
+    }
+
+    [Fact]
     public void Given_that_current_registry_is_not_set_when_getting_current_registry_it_should_be_same_as_default()
     {
         IbanRegistry.Current.Should().BeSameAs(IbanRegistry.Default);
