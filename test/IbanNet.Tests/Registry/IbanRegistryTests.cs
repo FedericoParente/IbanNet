@@ -1,8 +1,10 @@
 ﻿using IbanNet.Registry.Swift;
+using TestHelpers;
 
 namespace IbanNet.Registry;
 
-public class IbanRegistryTests
+[Collection(nameof(SetsCurrentRegistry))]
+public sealed class IbanRegistryTests : IDisposable
 {
     private readonly IbanRegistry _sut;
 
@@ -106,5 +108,44 @@ public class IbanRegistryTests
             .Which
             .Should()
             .BeEquivalentTo(expectedIbanCountry);
+    }
+
+    [Fact]
+    public void Given_that_current_registry_is_not_set_when_getting_current_registry_it_should_be_same_as_default()
+    {
+        IbanRegistry.Current.Should().BeSameAs(IbanRegistry.Default);
+    }
+
+    [Fact]
+    public void Given_that_current_registry_is_set_when_getting_current_registry_it_should_not_be_same_as_default()
+    {
+        var newRegistry = new IbanRegistry();
+
+        // Act
+        IbanRegistry.Current = newRegistry;
+
+        // Assert
+        IbanRegistry.Current
+            .Should()
+            .NotBeSameAs(IbanRegistry.Default)
+            .And.BeSameAs(newRegistry);
+    }
+
+    [Fact]
+    public void Given_that_current_registry_is_set_when_setting_current_registry_to_null_it_should_reset_back_to_null()
+    {
+        IbanRegistry.Current = new IbanRegistry();
+        IbanRegistry.Current.Should().NotBeSameAs(IbanRegistry.Default);
+
+        // Act
+        IbanRegistry.Current = null;
+
+        // Assert
+        IbanRegistry.Current.Should().BeSameAs(IbanRegistry.Default);
+    }
+
+    public void Dispose()
+    {
+        IbanRegistry.Current = null;
     }
 }

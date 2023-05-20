@@ -12,17 +12,42 @@ namespace IbanNet.Registry;
 public class IbanRegistry : IIbanRegistry
 {
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private static readonly Func<IIbanRegistry> DefaultFactory = () => Default;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private static Lazy<IIbanRegistry> _currentInstance = new(
+        DefaultFactory,
+        LazyThreadSafetyMode.ExecutionAndPublication
+    );
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private IDictionary<string, IbanCountry>? _dictionary;
+
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     private readonly object _syncObject = new();
 
     /// <summary>
-    /// Gets the default IBAN registry initialized with all the built-in countries.
+    /// Gets the default IBAN registry initialized with all the built-in countries provided by the <see cref="SwiftRegistryProvider" />.
     /// </summary>
     public static IbanRegistry Default { get; } = new()
     {
         // Read-only, so default can not be modified.
         Providers = new ReadOnlyCollection<IIbanRegistryProvider>(new IIbanRegistryProvider[] { new SwiftRegistryProvider() })
     };
+
+    /// <summary>
+    /// Gets or sets the current <see cref="IIbanRegistry" />. Defaults to <see cref="Default" />.
+    /// <para>Set to <see langword="null" /> will reset the registry to <see cref="Default" />.</para>
+    /// </summary>
+    /// <remarks>When using dependency injection, this property is configured automatically.</remarks>
+    [AllowNull]
+    public static IIbanRegistry Current
+    {
+        get => _currentInstance.Value;
+        set => _currentInstance = value is null
+            ? new Lazy<IIbanRegistry>(DefaultFactory, true)
+            : new Lazy<IIbanRegistry>(() => value, true);
+    }
 
     /// <summary>
     /// Initializes a new instance of <see cref="IbanRegistry" />.
