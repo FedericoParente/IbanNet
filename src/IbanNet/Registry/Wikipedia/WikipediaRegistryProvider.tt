@@ -87,7 +87,6 @@ public class WikipediaRegistryProvider : IIbanRegistryProvider
                     };
                 }))
                 .SelectMany(_ => _)
-                .Where(x => !Boycott(x.CountryCode))
                 .ToList();
 
             foreach (var x in wikiSpecs)
@@ -123,6 +122,7 @@ private string GetNativeName(string countryCode)
 
 private static bool Boycott(string countryCode)
 {
+    // Not Professional at all!
     return countryCode == "RU"; // Go Ukraine!
 }
 
